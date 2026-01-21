@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-// API URL - Update this after deploying to Render
-const API_URL = import.meta.env.PUBLIC_API_URL || 'https://tubetomp4-api.onrender.com';
+// API URL - Render backend
+const API_URL = import.meta.env.PUBLIC_API_URL || 'https://yutubetomp4-online.onrender.com';
 
 interface VideoFormat {
     formatId: string;
