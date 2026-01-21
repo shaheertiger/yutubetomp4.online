@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // API URL - Render backend
 const API_URL = import.meta.env.PUBLIC_API_URL || 'https://yutubetomp4-online.onrender.com';
@@ -7,6 +7,7 @@ interface VideoFormat {
     formatId: string;
     quality: string;
     resolution?: string;
+    height?: number;
     ext: string;
     filesize?: number;
     url?: string;
@@ -19,6 +20,7 @@ interface VideoInfo {
     duration: number;
     durationString: string;
     channel: string;
+    isLive?: boolean;
     formats: {
         video: VideoFormat[];
         audio: VideoFormat[];
@@ -34,81 +36,113 @@ const translations: Record<string, Record<string, string>> = {
         placeholder: 'Paste YouTube link here...',
         start: 'Start',
         processing: 'Analyzing Video...',
+        coldStart: 'Waking up server (may take 30-50s)...',
         downloadMp3: 'Download MP3',
         downloadMp4: 'Download MP4',
         selectQuality: 'Select Quality',
         downloading: 'Preparing download...',
         error: 'Error occurred. Please try again.',
+        tryAgain: 'Try Again',
+        newVideo: 'New Video',
+        liveVideo: 'LIVE',
     },
     es: {
         placeholder: 'Pega el enlace de YouTube aquí...',
         start: 'Iniciar',
         processing: 'Analizando Video...',
+        coldStart: 'Despertando servidor (puede tardar 30-50s)...',
         downloadMp3: 'Descargar MP3',
         downloadMp4: 'Descargar MP4',
         selectQuality: 'Seleccionar Calidad',
         downloading: 'Preparando descarga...',
         error: 'Error ocurrido. Por favor intenta de nuevo.',
+        tryAgain: 'Intentar de nuevo',
+        newVideo: 'Nuevo Video',
+        liveVideo: 'EN VIVO',
     },
     de: {
         placeholder: 'YouTube-Link hier einfügen...',
         start: 'Starten',
         processing: 'Video wird analysiert...',
+        coldStart: 'Server wird gestartet (kann 30-50s dauern)...',
         downloadMp3: 'MP3 herunterladen',
         downloadMp4: 'MP4 herunterladen',
         selectQuality: 'Qualität wählen',
         downloading: 'Download vorbereiten...',
         error: 'Fehler aufgetreten. Bitte erneut versuchen.',
+        tryAgain: 'Erneut versuchen',
+        newVideo: 'Neues Video',
+        liveVideo: 'LIVE',
     },
     fr: {
         placeholder: 'Collez le lien YouTube ici...',
         start: 'Démarrer',
         processing: 'Analyse de la vidéo...',
+        coldStart: 'Réveil du serveur (peut prendre 30-50s)...',
         downloadMp3: 'Télécharger MP3',
         downloadMp4: 'Télécharger MP4',
         selectQuality: 'Choisir la qualité',
         downloading: 'Préparation du téléchargement...',
         error: 'Une erreur est survenue. Veuillez réessayer.',
+        tryAgain: 'Réessayer',
+        newVideo: 'Nouvelle Vidéo',
+        liveVideo: 'EN DIRECT',
     },
     pt: {
         placeholder: 'Cole o link do YouTube aqui...',
         start: 'Iniciar',
         processing: 'Analisando Vídeo...',
+        coldStart: 'Iniciando servidor (pode levar 30-50s)...',
         downloadMp3: 'Baixar MP3',
         downloadMp4: 'Baixar MP4',
         selectQuality: 'Selecionar Qualidade',
         downloading: 'Preparando download...',
         error: 'Erro ocorrido. Por favor, tente novamente.',
+        tryAgain: 'Tentar novamente',
+        newVideo: 'Novo Vídeo',
+        liveVideo: 'AO VIVO',
     },
     ja: {
         placeholder: 'YouTubeリンクをここに貼り付け...',
         start: '開始',
         processing: '動画を分析中...',
+        coldStart: 'サーバーを起動中（30〜50秒かかる場合があります）...',
         downloadMp3: 'MP3をダウンロード',
         downloadMp4: 'MP4をダウンロード',
         selectQuality: '品質を選択',
         downloading: 'ダウンロード準備中...',
         error: 'エラーが発生しました。もう一度お試しください。',
+        tryAgain: '再試行',
+        newVideo: '新しい動画',
+        liveVideo: 'ライブ',
     },
     ko: {
         placeholder: 'YouTube 링크를 여기에 붙여넣기...',
         start: '시작',
         processing: '동영상 분석 중...',
+        coldStart: '서버 시작 중 (30-50초 소요될 수 있음)...',
         downloadMp3: 'MP3 다운로드',
         downloadMp4: 'MP4 다운로드',
         selectQuality: '품질 선택',
         downloading: '다운로드 준비 중...',
         error: '오류가 발생했습니다. 다시 시도해 주세요.',
+        tryAgain: '다시 시도',
+        newVideo: '새 동영상',
+        liveVideo: '라이브',
     },
     ar: {
         placeholder: 'الصق رابط YouTube هنا...',
         start: 'ابدأ',
         processing: 'جاري تحليل الفيديو...',
+        coldStart: 'جاري تشغيل الخادم (قد يستغرق 30-50 ثانية)...',
         downloadMp3: 'تحميل MP3',
         downloadMp4: 'تحميل MP4',
         selectQuality: 'اختر الجودة',
         downloading: 'جاري تحضير التحميل...',
         error: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
+        tryAgain: 'حاول مرة أخرى',
+        newVideo: 'فيديو جديد',
+        liveVideo: 'مباشر',
     },
 };
 
@@ -120,8 +154,12 @@ function formatFileSize(bytes?: number): string {
 
 function formatDuration(seconds?: number): string {
     if (!seconds) return '';
-    const mins = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+    if (hours > 0) {
+        return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
@@ -131,8 +169,30 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
     const [error, setError] = useState('');
     const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
     const [selectedQuality, setSelectedQuality] = useState<string>('');
+    const [isColdStart, setIsColdStart] = useState(false);
+    const [processingTime, setProcessingTime] = useState(0);
 
     const t = translations[lang] || translations.en;
+
+    // Track processing time for cold start detection
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (status === 'processing') {
+            interval = setInterval(() => {
+                setProcessingTime(prev => {
+                    // Show cold start message after 5 seconds
+                    if (prev >= 5 && !isColdStart) {
+                        setIsColdStart(true);
+                    }
+                    return prev + 1;
+                });
+            }, 1000);
+        } else {
+            setProcessingTime(0);
+            setIsColdStart(false);
+        }
+        return () => clearInterval(interval);
+    }, [status]);
 
     const isValidYouTubeUrl = (url: string): boolean => {
         const patterns = [
@@ -140,6 +200,7 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
             /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]+/,
             /^(https?:\/\/)?(www\.)?youtu\.be\/[\w-]+/,
             /^(https?:\/\/)?(www\.)?youtube\.com\/shorts\/[\w-]+/,
+            /^(https?:\/\/)?(www\.)?youtube\.com\/live\/[\w-]+/,
         ];
         return patterns.some(pattern => pattern.test(url));
     };
@@ -161,17 +222,23 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
         setVideoInfo(null);
 
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
             const response = await fetch(`${API_URL}/api/info`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ url }),
+                signal: controller.signal,
             });
 
+            clearTimeout(timeoutId);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to fetch video info');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.message || 'Failed to fetch video info');
             }
 
             const data = await response.json();
@@ -179,12 +246,16 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
             setStatus('success');
 
             // Set default quality to best available
-            if (data.formats.video.length > 0) {
+            if (data.formats?.video?.length > 0) {
                 setSelectedQuality(data.formats.video[0].formatId);
             }
         } catch (err) {
             console.error('Error:', err);
-            setError(err instanceof Error ? err.message : t.error);
+            if (err instanceof Error && err.name === 'AbortError') {
+                setError('Request timed out. Please try again.');
+            } else {
+                setError(err instanceof Error ? err.message : t.error);
+            }
             setStatus('error');
         }
     };
@@ -208,7 +279,8 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to get download URL');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Failed to get download URL');
             }
 
             const data = await response.json();
@@ -221,7 +293,7 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
             setStatus('success');
         } catch (err) {
             console.error('Download error:', err);
-            setError(t.error);
+            setError(err instanceof Error ? err.message : t.error);
             setStatus('error');
         }
     };
@@ -279,7 +351,16 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
                         <div className="flex justify-center">
                             <div className="w-10 h-10 border-4 border-brand-red border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <p className="text-white font-medium">{t.processing}</p>
+                        <div>
+                            <p className="text-white font-medium">
+                                {isColdStart ? t.coldStart : t.processing}
+                            </p>
+                            {isColdStart && (
+                                <p className="text-white/40 text-xs mt-1">
+                                    {processingTime}s elapsed
+                                </p>
+                            )}
+                        </div>
                     </div>
                 ) : status === 'downloading' ? (
                     <div className="w-full py-6 text-center space-y-4">
@@ -292,23 +373,37 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
                     <div className="w-full py-3 px-2">
                         {/* Video Info */}
                         <div className="flex items-start gap-4 mb-4">
-                            <img
-                                src={videoInfo.thumbnail}
-                                alt={videoInfo.title}
-                                className="w-32 h-20 object-cover rounded-lg flex-shrink-0"
-                            />
+                            <div className="relative flex-shrink-0">
+                                <img
+                                    src={videoInfo.thumbnail}
+                                    alt={videoInfo.title}
+                                    className="w-32 h-20 object-cover rounded-lg"
+                                    onError={(e) => {
+                                        e.currentTarget.src = '/favicon.png';
+                                    }}
+                                />
+                                {videoInfo.isLive && (
+                                    <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded">
+                                        {t.liveVideo}
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-white font-medium text-sm line-clamp-2 mb-1">
                                     {videoInfo.title}
                                 </h3>
                                 <p className="text-white/50 text-xs">
-                                    {videoInfo.channel} • {videoInfo.durationString || formatDuration(videoInfo.duration)}
+                                    {videoInfo.channel}
+                                    {videoInfo.duration && !videoInfo.isLive && (
+                                        <> • {videoInfo.durationString || formatDuration(videoInfo.duration)}</>
+                                    )}
                                 </p>
                             </div>
                             <button
                                 onClick={handleReset}
-                                className="p-2 text-white/50 hover:text-white flex-shrink-0"
+                                className="p-2 text-white/50 hover:text-white flex-shrink-0 hover:bg-white/10 rounded-lg transition-colors"
                                 aria-label="Reset Converter"
+                                title={t.newVideo}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
@@ -317,7 +412,7 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
                         </div>
 
                         {/* Quality Selector */}
-                        {videoInfo.formats.video.length > 0 && (
+                        {videoInfo.formats?.video?.length > 0 && (
                             <div className="mb-4">
                                 <label className="text-white/60 text-xs mb-2 block">{t.selectQuality}</label>
                                 <div className="flex flex-wrap gap-2">
@@ -331,7 +426,7 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
                                                     : 'bg-white/10 text-white/70 hover:bg-white/20'
                                             }`}
                                         >
-                                            {format.quality}
+                                            {format.quality || `${format.height}p`}
                                             {format.filesize && (
                                                 <span className="ml-1 opacity-60">
                                                     ({formatFileSize(format.filesize)})
@@ -373,12 +468,20 @@ export default function ConverterWidget({ lang = 'en' }: Props) {
             </div>
             {error && (
                 <div className="px-4 pb-3 pt-1">
-                    <p className="text-red-400 text-sm flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                        </svg>
-                        {error}
-                    </p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-red-400 text-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 flex-shrink-0">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                            <span className="line-clamp-1">{error}</span>
+                        </p>
+                        <button
+                            onClick={handleStart}
+                            className="ml-3 text-xs text-brand-red hover:text-red-400 font-medium flex-shrink-0"
+                        >
+                            {t.tryAgain}
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
