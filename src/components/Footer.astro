@@ -90,6 +90,18 @@ const currentYear = new Date().getFullYear();
               class="text-white/50 hover:text-white transition-colors text-sm"
               >{t("footer.privacy")}</a>
           </li>
+          <li>
+            <a
+              href={lang === "en" ? "/dmca" : `/${lang}/dmca`}
+              class="text-white/50 hover:text-white transition-colors text-sm"
+              >{t("footer.dmca")}</a>
+          </li>
+          <li>
+            <a
+              href={lang === "en" ? "/contact" : `/${lang}/contact`}
+              class="text-white/50 hover:text-white transition-colors text-sm"
+              >{t("footer.contact")}</a>
+          </li>
         </ul>
       </div>
 

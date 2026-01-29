@@ -85,6 +85,8 @@ export const translations = {
         'footer.copyright': 'All rights reserved.',
         'footer.terms': 'Terms of Service',
         'footer.privacy': 'Privacy Policy',
+        'footer.dmca': 'DMCA Policy',
+        'footer.contact': 'Contact Us',
     },
     es: {
         // Header
@@ -157,6 +159,8 @@ export const translations = {
         'footer.copyright': 'Todos los derechos reservados.',
         'footer.terms': 'Términos de Servicio',
         'footer.privacy': 'Política de Privacidad',
+        'footer.dmca': 'Política DMCA',
+        'footer.contact': 'Contáctenos',
     },
     de: {
         'nav.home': 'Startseite',
@@ -183,6 +187,8 @@ export const translations = {
         'footer.copyright': 'Alle Rechte vorbehalten.',
         'footer.terms': 'Nutzungsbedingungen',
         'footer.privacy': 'Datenschutzrichtlinie',
+        'footer.dmca': 'DMCA-Richtlinie',
+        'footer.contact': 'Kontakt',
     },
     fr: {
         'nav.home': 'Accueil',
@@ -206,6 +212,8 @@ export const translations = {
         'footer.copyright': 'Tous droits réservés.',
         'footer.terms': "Conditions d'utilisation",
         'footer.privacy': 'Politique de confidentialité',
+        'footer.dmca': 'Politique DMCA',
+        'footer.contact': 'Contactez-nous',
     },
     pt: {
         'nav.home': 'Início',
@@ -229,6 +237,8 @@ export const translations = {
         'footer.copyright': 'Todos os direitos reservados.',
         'footer.terms': 'Termos de Serviço',
         'footer.privacy': 'Política de Privacidade',
+        'footer.dmca': 'Política DMCA',
+        'footer.contact': 'Contate-nos',
     },
     ja: {
         'nav.home': 'ホーム',
@@ -252,6 +262,8 @@ export const translations = {
         'footer.copyright': '無断複写・転載を禁じます。',
         'footer.terms': '利用規約',
         'footer.privacy': 'プライバシーポリシー',
+        'footer.dmca': 'DMCAポリシー',
+        'footer.contact': 'お問い合わせ',
     },
     ko: {
         'nav.home': '홈',
@@ -275,6 +287,8 @@ export const translations = {
         'footer.copyright': '모든 권리 보유.',
         'footer.terms': '이용약관',
         'footer.privacy': '개인정보 처리방침',
+        'footer.dmca': 'DMCA 정책',
+        'footer.contact': '문의하기',
     },
     ar: {
         'nav.home': 'الرئيسية',
@@ -298,6 +312,8 @@ export const translations = {
         'footer.copyright': 'جميع الحقوق محفوظة.',
         'footer.terms': 'شروط الخدمة',
         'footer.privacy': 'سياسة الخصوصية',
+        'footer.dmca': 'سياسة DMCA',
+        'footer.contact': 'اتصل بنا',
     },
 } as const;
 
